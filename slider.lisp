@@ -27,6 +27,14 @@
 	(- out-max out-min))
      out-min))
 
+;; (defun lin-curve (in in-min in-max out-min out-max curve)
+;;   (let* ((pos (/ (- in in-min)
+;; 		 (- in-max in-min)))
+;; 	 (denominator (- 1.0 (exp curve)))
+;; 	 (numerator (- 1.0 (exp (* pos curve)))))
+;;     (+ out-min
+;;        (* (- out-max out-min) (/ numerator denominator)))))
+
 (define-widget exp-slider (QSlider)
   ((maximum :initarg :maximum :accessor maximum)
    (minimum :initarg :minimum :accessor minimum)
@@ -67,7 +75,8 @@
   (signal! exp-slider (value-changed double) 
 	   (let* ((val (q+:value exp-slider))
 		  (args `(,val ,(* minimum div) ,(* maximum div) ,minimum ,maximum))
-		  (fun (case curve (:lin #'lin-lin) (:exp #'exp-lin))))
+		  (fun (case curve (:lin #'lin-lin) (:exp #'lin-exp))))
+	     (format t "~%~a-> ~a" value (apply fun args))
 	     (apply fun args))))
 
 (define-slot (exp-slider released) ()
@@ -77,7 +86,7 @@
   (with-slots (div minimum maximum curve) exp-slider
     (let* ((val (q+:value exp-slider))
 	   (args `(,val ,(* minimum div) ,(* maximum div) ,minimum ,maximum))
-	   (fun (case curve (:lin #'lin-lin) (:exp #'exp-lin))))
+	   (fun (case curve (:lin #'lin-lin) (:exp #'lin-exp))))
       (apply fun args))))
 
 (defmethod (setf value) (val (exp-slider exp-slider))
@@ -85,7 +94,7 @@
     (unless (<= minimum val maximum)
       (error "~a is not within [~a, ~a]." val minimum maximum))
     (let ((args `(,val ,minimum ,maximum ,(* minimum div) ,(* maximum div)))
-	  (fun (case curve (:lin #'lin-lin) (:exp #'lin-exp))))
+	  (fun (case curve (:lin #'lin-lin) (:exp #'exp-lin))))
       (setf (q+:value exp-slider) (round (apply fun args))))))
 
 (defmethod (setf maximum) :after (value (exp-slider exp-slider))
